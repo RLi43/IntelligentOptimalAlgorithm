@@ -5,9 +5,9 @@ from mpl_toolkits.mplot3d import Axes3D
 
 class Minimal():
     def __init__(self, lim=None):
-        self.F = self.six_hump_camel_back
+        self.F = self.af
         if lim == None:
-            self.lim = np.array([[-10,-10],[10,10]])
+            self.lim = np.array([[-5,-5],[5,5]])
         else:
             self.lim = lim
     
@@ -40,9 +40,10 @@ class Minimal():
         x,y = np.meshgrid(x,y)
         np.meshgrid()
 
-        z = self.Rana([x,y])
-        
-        plt.contour(x,y,z)
+        z = self.F([x,y])
+        plt.contourf(x,y,z,levels=10, alpha=.75, cmap='coolwarm')
+        C = plt.contour(x,y,z,levels=10)
+        plt.clabel(C, inline=True, fontsize=8)
         plt.plot(p[0],p[1],'x')
         plt.text(self.lim[0][0]+1,self.lim[0][1]+1,r'$f(%.4f,%.4f)=%.4f$'%(p[0],p[1],v),fontdict={'size':'9','color':'b'})
 
@@ -63,6 +64,35 @@ ax = Axes3D(fig)
 ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap='rainbow')
 plt.show()
 """
+class TSP():
+    def __init__(self, cn = 10, ps = None):
+        self.city_num = cn
+        if ps == None:
+            self.positions = np.random.rand(self.city_num, 2)
+        else:
+            self.positions = ps
+        
+    def rand_new(self):
+        arr = np.arange(self.city_num)
+        np.random.shuffle(arr)
+        return arr
+
+    def getv(self,o):
+        theor = self.positions[o]
+        dis = 0
+        for i in range(self.city_num-1):
+            dis += np.sqrt((theor[i][0] - theor[i+1][0])**2 + (theor[i][1] - theor[i+1][1])**2)
+        dis += np.sqrt((theor[0][0] - theor[-1][0])**2 + (theor[0][1] - theor[-1][1])**2)
+        return dis
+    
+    def draw(self, o, v):
+        theor = self.positions[o]
+        plt.plot(theor[:,0],theor[:,1],'or')
+        nt = np.insert(theor,len(theor),theor[0,:],axis = 0)
+        plt.plot(nt[:,0],nt[:,1])
+
+
+
 
 class SA():
     def __init__(self, prob_v, prob_p, prob_s=None, T=100, T_end=1e-3, L=100, r=0.9):
@@ -118,7 +148,9 @@ class SA():
         plt.show()
 
 m = Minimal()
-sa = SA(m.F, m.sample, m.drawResult)
+tsp = TSP()
+#sa = SA(m.af, m.sample, m.drawResult)
+sa = SA(tsp.getv, tsp.rand_new, tsp.draw)
 sa.solve()
 sa.drawValueChange()
 
@@ -128,6 +160,6 @@ if BENCH:
     for i in range(100):
         sa = SA(m.F, m.sample)
         sa.solve()
-        bench.append([sa.x,sa.v])
+        bench.append([sa.x[0],sa.x[1],sa.v])
     bench = np.array(bench)
     np.save('six_h_-3_2_100',bench)
